@@ -34,7 +34,7 @@
   }
 
   header {
-    background: var(--steel-900);
+    background: linear-gradient(to right, #ffffff 0%, var(--steel-900) 50%);
     color: var(--blueprint-50);
     padding: 10px 20px;
     display: flex;
@@ -57,13 +57,6 @@
     text-transform: uppercase;
     margin: 0;
     align-self: center;
-  }
-
-  header .count {
-    font-size: 12px;
-    color: var(--blueprint-200);
-    margin-left: auto;
-    font-variant-numeric: tabular-nums;
   }
 
   #map {
@@ -150,7 +143,6 @@
   <header>
     <img class="logo" src="BlueSteelLogo30x15_transparent.png" alt="Blue Steel Structural">
     <h1>Project Map</h1>
-    <span class="count" id="pin-count"></span>
   </header>
   <div id="map"></div>
   <div id="status">Loading project data&hellip;</div>
@@ -163,7 +155,6 @@
   const CSV_URL = "https://docs.google.com/spreadsheets/d/1X_sd8SVZS4d30m0qmYwAKBRfSoPslwa93BjkWY3ibK8/gviz/tq?tqx=out:csv&gid=0";
 
   const statusEl = document.getElementById('status');
-  const countEl = document.getElementById('pin-count');
 
   function setStatus(msg, isError) {
     statusEl.textContent = msg;
@@ -234,7 +225,6 @@
     }
 
     hideStatus();
-    countEl.textContent = markers.length + (markers.length === 1 ? ' project' : ' projects');
 
     const group = new L.featureGroup(markers);
     map.fitBounds(group.getBounds().pad(0.2));
