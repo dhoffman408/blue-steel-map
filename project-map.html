@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Steel Structural — Project Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<style>
+  :root {
+    --steel-900: #1a2733;
+    --steel-700: #2c4257;
+    --steel-500: #4a6478;
+    --blueprint-50: #eef3f7;
+    --blueprint-200: #cddce6;
+    --accent: #c0632b;
+    --paper: #fbfaf7;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  header {
+    background: var(--steel-900);
+    color: var(--blueprint-50);
+    padding: 14px 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 3px solid var(--accent);
+    flex-shrink: 0;
+  }
+
+  header .mark {
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    flex-shrink: 0;
+    transform: rotate(45deg);
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  header .count {
+    font-size: 12px;
+    color: var(--blueprint-200);
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #map {
+    flex: 1;
+    background: var(--blueprint-50);
+  }
+
+  #status {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--steel-900);
+    color: var(--paper);
+    padding: 8px 16px;
+    border-radius: 3px;
+    font-size: 13px;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  #status.hidden { display: none; }
+  #status.error { background: #7a2c1f; }
+
+  /* Marker */
+  .bs-pin {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bs-pin-inner {
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border: 2px solid var(--paper);
+    border-radius: 2px;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 3px;
+    box-shadow: 0 3px 14px rgba(26,39,51,0.25);
+  }
+  .leaflet-popup-content {
+    margin: 12px 14px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .popup-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--steel-900);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .popup-address {
+    font-size: 12.5px;
+    color: var(--steel-700);
+    line-height: 1.4;
+  }
+  .popup-coords {
+    font-size: 10.5px;
+    color: var(--steel-500);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+    border-top: 1px solid var(--blueprint-200);
+    padding-top: 5px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="mark"></div>
+    <h1>Blue Steel Structural &mdash; Project Map</h1>
+    <span class="count" id="pin-count"></span>
+  </header>
+  <div id="map"></div>
+  <div id="status">Loading project data&hellip;</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+  // Swap this URL for the live Apps Script CSV endpoint once geocoding is in production.
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/1X_sd8SVZS4d30m0qmYwAKBRfSoPslwa93BjkWY3ibK8/gviz/tq?tqx=out:csv&gid=0";
+
+  const statusEl = document.getElementById('status');
+  const countEl = document.getElementById('pin-count');
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.classList.remove('hidden');
+    statusEl.classList.toggle('error', !!isError);
+  }
+
+  function hideStatus() {
+    statusEl.classList.add('hidden');
+  }
+
+  const map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  const bsIcon = L.divIcon({
+    className: '',
+    html: '<div class="bs-pin"><div class="bs-pin-inner"></div></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -10]
+  });
+
+  function loadData() {
+    Papa.parse(CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        renderMarkers(results.data);
+      },
+      error: function(err) {
+        console.error(err);
+        setStatus('Could not load project data. Check the CSV URL and sharing settings.', true);
+      }
+    });
+  }
+
+  function renderMarkers(rows) {
+    const markers = [];
+
+    rows.forEach(function(row) {
+      const lat = parseFloat(row.Latitude);
+      const lng = parseFloat(row.Longitude);
+      if (isNaN(lat) || isNaN(lng)) return; // skip rows without valid coordinates yet
+
+      const marker = L.marker([lat, lng], { icon: bsIcon }).addTo(map);
+
+      const addressLine = [row.Street, [row.City, row.State].filter(Boolean).join(', '), row.Zip]
+        .filter(Boolean).join('<br>');
+
+      marker.bindPopup(
+        '<div class="popup-title">Project Site</div>' +
+        '<div class="popup-address">' + addressLine + '</div>' +
+        '<div class="popup-coords">' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</div>'
+      );
+
+      markers.push(marker);
+    });
+
+    if (markers.length === 0) {
+      setStatus('No geocoded addresses found yet.', true);
+      map.setView([39.5, -98.35], 4); // fallback: continental US view
+      return;
+    }
+
+    hideStatus();
+    countEl.textContent = markers.length + (markers.length === 1 ? ' project' : ' projects');
+
+    const group = new L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }
+
+  loadData();
+</script>
+</body>
+</html>
