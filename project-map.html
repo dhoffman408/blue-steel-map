@@ -7,12 +7,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <style>
   :root {
-    --steel-900: #1a2733;
-    --steel-700: #2c4257;
-    --steel-500: #4a6478;
+    --steel-900: #041b33;
+    --steel-700: #0a3d6b;
+    --steel-500: #3d6a94;
     --blueprint-50: #eef3f7;
     --blueprint-200: #cddce6;
-    --accent: #c0632b;
+    --brand-blue: #003c82;
+    --accent: #1a6fc4;
     --paper: #fbfaf7;
   }
 
@@ -35,20 +36,18 @@
   header {
     background: var(--steel-900);
     color: var(--blueprint-50);
-    padding: 14px 20px;
+    padding: 10px 20px;
     display: flex;
-    align-items: baseline;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
     border-bottom: 3px solid var(--accent);
     flex-shrink: 0;
   }
 
-  header .mark {
-    width: 10px;
-    height: 10px;
-    background: var(--accent);
+  header .logo {
+    height: 34px;
+    width: auto;
     flex-shrink: 0;
-    transform: rotate(45deg);
   }
 
   header h1 {
@@ -57,6 +56,7 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     margin: 0;
+    align-self: center;
   }
 
   header .count {
@@ -96,13 +96,22 @@
     justify-content: center;
   }
   .bs-pin-inner {
-    width: 14px;
-    height: 14px;
-    background: var(--accent);
-    border: 2px solid var(--paper);
-    border-radius: 2px;
-    transform: rotate(45deg);
+    position: relative;
+    width: 15px;
+    height: 15px;
+    background: var(--brand-blue);
+    border: 2.5px solid var(--paper);
+    border-radius: 50%;
     box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  .bs-pin-inner::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    transform: translate(-3px, -3px);
   }
 
   .leaflet-popup-content-wrapper {
@@ -116,7 +125,7 @@
   .popup-title {
     font-size: 13px;
     font-weight: 700;
-    color: var(--steel-900);
+    color: var(--brand-blue);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     margin-bottom: 4px;
@@ -139,8 +148,8 @@
 <body>
 <div id="app">
   <header>
-    <div class="mark"></div>
-    <h1>Blue Steel Structural &mdash; Project Map</h1>
+    <img class="logo" src="BlueSteelLogo30x15_transparent.png" alt="Blue Steel Structural">
+    <h1>Project Map</h1>
     <span class="count" id="pin-count"></span>
   </header>
   <div id="map"></div>
