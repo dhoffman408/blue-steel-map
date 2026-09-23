@@ -152,8 +152,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
-  // Swap this URL for the live Apps Script CSV endpoint once geocoding is in production.
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/1X_sd8SVZS4d30m0qmYwAKBRfSoPslwa93BjkWY3ibK8/gviz/tq?tqx=out:csv&gid=0";
+  // Points at the dedicated public sheet (Project/Latitude/Longitude only) —
+  // kept separate from the main working spreadsheet, which stays private.
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/1K97ri0kqAgA5CUo13F0ETWaIYHElvh9S_bgny-OFx90/gviz/tq?tqx=out:csv&gid=0";
 
   const statusEl = document.getElementById('status');
 
@@ -207,13 +208,11 @@
 
       const marker = L.marker([lat, lng], { icon: bsIcon }).addTo(map);
 
-      const addressLine = [row.Street, [row.City, row.State].filter(Boolean).join(', '), row.Zip]
-        .filter(Boolean).join('<br>');
+      const projectName = row.Project || 'Project Site';
 
       marker.bindPopup(
-        '<div class="popup-title">Project Site</div>' +
-        '<div class="popup-address">' + addressLine + '</div>' +
-        '<div class="popup-coords">' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</div>'
+        '<div class="popup-title">' + projectName + '</div>' +
+        '<div class="popup-coords">' + lat + ', ' + lng + '</div>'
       );
 
       markers.push(marker);
